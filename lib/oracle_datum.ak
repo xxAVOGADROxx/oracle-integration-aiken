@@ -40,7 +40,7 @@ pub fn get_price(price_data: PriceData) -> Int {
   }
 }
 
-/// Retrieves the timestamp from the PriceData
+/// Retrieves the creation time from the PriceData
 ///
 /// @param price_data - The PriceData to extract the timestamp from
 /// @return The timestamp as an Int
@@ -55,7 +55,7 @@ pub fn get_created_at(price_data: PriceData) -> Int {
   }
 }
 
-/// Retrieves the expiry from the PriceData
+/// Retrieves the expiry time from the PriceData
 ///
 /// @param price_data - The PriceData to extract the expiry from
 /// @return The expiry as an Int
@@ -87,12 +87,20 @@ pub fn get_oracle_price(oracle_datum: OracleDatum) -> Int {
   get_price(oracle_datum.price_data)
 }
 
-/// Retrieves the timestamp from the OracleDatum
+/// Retrieves the creation time from the OracleDatum
 ///
 /// @param oracle_datum - The OracleDatum to extract the timestamp from
 /// @return The timestamp as an Int
-pub fn get_oracle_timestamp(oracle_datum: OracleDatum) -> Int {
+pub fn get_oracle_created_at(oracle_datum: OracleDatum) -> Int {
   get_created_at(oracle_datum.price_data)
+}
+
+/// Retrieves the expiry time from the OracleDatum
+///
+/// @param oracle_datum - The OracleDatum to extract the timestamp from
+/// @return The timestamp as an Int
+pub fn get_oracle_expiry_at(oracle_datum: OracleDatum) -> Int {
+  get_expiry_at(oracle_datum.price_data)
 }
 
 /// Creates a new OracleDatum with the given price, timestamp, and expiry
@@ -122,7 +130,7 @@ test create_and_get_price() {
 /// Tests the OracleDatum creation and retrieval functions
 test create_and_get_timestamp() {
   let datum = create_oracle_datum(2723, 1720056807332, 1720078407332)
-  get_created_at(datum.price_data) == 1720056807332 && get_oracle_timestamp(
+  get_created_at(datum.price_data) == 1720056807332 && get_oracle_created_at(
     datum,
   ) == 1720056807332
 }
@@ -179,7 +187,7 @@ test oracle_datum_getters() {
       ),
     }
 
-  get_oracle_price(datum) == 2723 && get_oracle_timestamp(datum) == 1720056807332 && get_expiry_at(
+  get_oracle_price(datum) == 2723 && get_oracle_created_at(datum) == 1720056807332 && get_expiry_at(
     datum.price_data,
   ) == 1720078407332
 }
