@@ -44,7 +44,7 @@ pub fn get_price(price_data: PriceData) -> Int {
 ///
 /// @param price_data - The PriceData to extract the timestamp from
 /// @return The timestamp as an Int
-pub fn get_timestamp(price_data: PriceData) -> Int {
+pub fn get_created_at(price_data: PriceData) -> Int {
   when price_data is {
     GenericData { price_map } ->
       when pairs.get_first(price_map, 1) is {
@@ -59,7 +59,7 @@ pub fn get_timestamp(price_data: PriceData) -> Int {
 ///
 /// @param price_data - The PriceData to extract the expiry from
 /// @return The expiry as an Int
-pub fn get_expiry(price_data: PriceData) -> Int {
+pub fn get_expiry_at(price_data: PriceData) -> Int {
   when price_data is {
     GenericData { price_map } ->
       when pairs.get_first(price_map, 2) is {
@@ -76,7 +76,7 @@ pub fn get_expiry(price_data: PriceData) -> Int {
 /// @param current_time - The current time to compare against
 /// @return True if the oracle is valid, False otherwise
 pub fn is_oracle_valid(oracle_datum: OracleDatum, current_time: Int) -> Bool {
-  current_time <= get_expiry(oracle_datum.price_data)
+  current_time <= get_expiry_at(oracle_datum.price_data)
 }
 
 /// Retrieves the price from the OracleDatum
@@ -92,7 +92,7 @@ pub fn get_oracle_price(oracle_datum: OracleDatum) -> Int {
 /// @param oracle_datum - The OracleDatum to extract the timestamp from
 /// @return The timestamp as an Int
 pub fn get_oracle_timestamp(oracle_datum: OracleDatum) -> Int {
-  get_timestamp(oracle_datum.price_data)
+  get_created_at(oracle_datum.price_data)
 }
 
 /// Creates a new OracleDatum with the given price, timestamp, and expiry
@@ -122,7 +122,7 @@ test create_and_get_price() {
 /// Tests the OracleDatum creation and retrieval functions
 test create_and_get_timestamp() {
   let datum = create_oracle_datum(2723, 1720056807332, 1720078407332)
-  get_timestamp(datum.price_data) == 1720056807332 && get_oracle_timestamp(
+  get_created_at(datum.price_data) == 1720056807332 && get_oracle_timestamp(
     datum,
   ) == 1720056807332
 }
@@ -130,7 +130,7 @@ test create_and_get_timestamp() {
 /// Tests the OracleDatum creation and retrieval functions
 test create_and_get_expiry() {
   let datum = create_oracle_datum(2723, 1720056807332, 1720078407332)
-  get_expiry(datum.price_data) == 1720078407332
+  get_expiry_at(datum.price_data) == 1720078407332
 }
 
 /// Tests if the OracleDatum is valid
@@ -179,7 +179,7 @@ test oracle_datum_getters() {
       ),
     }
 
-  get_oracle_price(datum) == 2723 && get_oracle_timestamp(datum) == 1720056807332 && get_expiry(
+  get_oracle_price(datum) == 2723 && get_oracle_timestamp(datum) == 1720056807332 && get_expiry_at(
     datum.price_data,
   ) == 1720078407332
 }
