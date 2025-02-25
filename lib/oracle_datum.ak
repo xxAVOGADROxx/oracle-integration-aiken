@@ -25,9 +25,7 @@ pub type PriceData {
 
 /// Represents the main oracle datum structure
 pub type OracleDatum {
-  shared_data: Option<PriceData>,
   generic_data: List<PriceData>,
-  extended_data: Option<PriceData>,
 }
 
 /// Retrieves the first generic data from the OracleDatum
@@ -126,11 +124,7 @@ pub fn create_oracle_datum(
 ) -> OracleDatum {
   let price_map = [Pair(0, price), Pair(1, timestamp), Pair(2, expiry)]
   let price_data = GenericData { price_map }
-  OracleDatum {
-    shared_data: None,
-    generic_data: [price_data],
-    extended_data: None,
-  }
+  OracleDatum { generic_data: [price_data] }
 }
 
 /// Checks if the oracle data is valid (not expired)
@@ -174,15 +168,10 @@ test oracle_datum_serialise() {
   let price_map =
     [Pair(0, 490850), Pair(1, 1707172554600), Pair(2, 1707176154600)]
   let price_data = GenericData { price_map }
-  let datum =
-    OracleDatum {
-      shared_data: None,
-      generic_data: [price_data],
-      extended_data: None,
-    }
+  let datum = OracleDatum { generic_data: [price_data] }
   // The expected CBOR format based on the CDDL spec
   let expected_cbor =
-    #"d8799fd87a809fd87b9fa3001a00077d62011b0000018d7b69e768021b0000018d7ba0d5e8ffffd87a80ff"
+    #"d8799f9fd87b9fa3001a00077d62011b0000018d7b69e768021b0000018d7ba0d5e8ffffff"
 
   cbor.serialise(datum) == expected_cbor
 }
@@ -192,14 +181,9 @@ test oracle_datum_diagnostic() {
   let price_map =
     [Pair(0, 490850), Pair(1, 1707172554600), Pair(2, 1707176154600)]
   let price_data = GenericData { price_map }
-  let datum =
-    OracleDatum {
-      shared_data: None,
-      generic_data: [price_data],
-      extended_data: None,
-    }
+  let datum = OracleDatum { generic_data: [price_data] }
   let expected_diagnostic =
-    @"121([_ 122([]), [_ 123([_ {_ 0: 490850, 1: 1707172554600, 2: 1707176154600 }])], 122([])])"
+    @"121([_ [_ 123([_ {_ 0: 490850, 1: 1707172554600, 2: 1707176154600 }])]])"
 
   cbor.diagnostic(datum) == expected_diagnostic
 }
