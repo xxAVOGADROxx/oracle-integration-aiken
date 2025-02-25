@@ -1,6 +1,5 @@
 use aiken/cbor
 use aiken/collection/pairs
-use aiken/crypto.{ScriptHash}
 
 /// Represents a map of key-value pairs for price-related data
 pub type PriceMap =
@@ -18,25 +17,25 @@ pub type PriceData {
 
 /// Represents the main oracle datum structure
 pub type OracleDatum {
-  price_data: PriceData,
+  price_data: Option<PriceData>,
 }
-
-/// Type alias for validator hash
-pub type ValidatorHash =
-  ScriptHash
 
 /// Retrieves the price from the PriceData
 ///
 /// @param price_data - The PriceData to extract the price from
 /// @return The price as an Int
-pub fn get_price(price_data: PriceData) -> Int {
+pub fn get_price(price_data: Option<PriceData>) -> Int {
   when price_data is {
-    GenericData { price_map } ->
-      when pairs.get_first(price_map, 0) is {
-        Some(price) -> price
-        None -> fail @"Price not found"
+    Some(price_data) ->
+      when price_data is {
+        GenericData { price_map } ->
+          when pairs.get_first(price_map, 0) is {
+            Some(price) -> price
+            None -> fail @"Price not found"
+          }
+        _ -> fail @"Invalid PriceData variant"
       }
-    _ -> fail @"Invalid PriceData variant"
+    None -> fail @"No PriceData available"
   }
 }
 
@@ -44,14 +43,18 @@ pub fn get_price(price_data: PriceData) -> Int {
 ///
 /// @param price_data - The PriceData to extract the timestamp from
 /// @return The timestamp as an Int
-pub fn get_created_at(price_data: PriceData) -> Int {
+pub fn get_created_at(price_data: Option<PriceData>) -> Int {
   when price_data is {
-    GenericData { price_map } ->
-      when pairs.get_first(price_map, 1) is {
-        Some(timestamp) -> timestamp
-        None -> fail @"Timestamp not found"
+    Some(price_data) ->
+      when price_data is {
+        GenericData { price_map } ->
+          when pairs.get_first(price_map, 1) is {
+            Some(timestamp) -> timestamp
+            None -> fail @"Timestamp not found"
+          }
+        _ -> fail @"Invalid PriceData variant"
       }
-    _ -> fail @"Invalid PriceData variant"
+    None -> fail @"No PriceData available"
   }
 }
 
@@ -59,14 +62,18 @@ pub fn get_created_at(price_data: PriceData) -> Int {
 ///
 /// @param price_data - The PriceData to extract the expiry from
 /// @return The expiry as an Int
-pub fn get_expiry_at(price_data: PriceData) -> Int {
+pub fn get_expiry_at(price_data: Option<PriceData>) -> Int {
   when price_data is {
-    GenericData { price_map } ->
-      when pairs.get_first(price_map, 2) is {
-        Some(expiry) -> expiry
-        None -> fail @"Expiry not found"
+    Some(price_data) ->
+      when price_data is {
+        GenericData { price_map } ->
+          when pairs.get_first(price_map, 2) is {
+            Some(expiry) -> expiry
+            None -> fail @"Expiry not found"
+          }
+        _ -> fail @"Invalid PriceData variant"
       }
-    _ -> fail @"Invalid PriceData variant"
+    None -> fail @"No PriceData available"
   }
 }
 
@@ -114,11 +121,9 @@ pub fn create_oracle_datum(
   timestamp: Int,
   expiry: Int,
 ) -> OracleDatum {
-  OracleDatum {
-    price_data: GenericData {
-      price_map: [Pair(0, price), Pair(1, timestamp), Pair(2, expiry)],
-    },
-  }
+  let price_map = [Pair(0, price), Pair(1, timestamp), Pair(2, expiry)]
+  let price_data = GenericData { price_map }
+  OracleDatum { price_data: Some(price_data) }
 }
 
 /// Tests the OracleDatum creation and retrieval functions
@@ -152,40 +157,34 @@ test is_oracle_valid_test() {
 
 /// Oracle Datum Diagnostic checks
 test oracle_datum_diagnostic() {
-  let datum =
-    OracleDatum {
-      price_data: GenericData(
-        [Pair(0, 490850), Pair(1, 1707172554600), Pair(2, 1707176154600)],
-      ),
-    }
+  let price_map =
+    [Pair(0, 490850), Pair(1, 1707172554600), Pair(2, 1707176154600)]
+  let price_data = GenericData { price_map }
+  let datum = OracleDatum { price_data: Some(price_data) }
   let expected_diagnostic =
-    @"121([_ 123([_ {_ 0: 490850, 1: 1707172554600, 2: 1707176154600 }])])"
+    @"121([_ 121([_ 123([_ {_ 0: 490850, 1: 1707172554600, 2: 1707176154600 }])])])"
 
   cbor.diagnostic(datum) == expected_diagnostic
 }
 
 /// Oracle Datum Serialisation checks
 test oracle_datum_serialise() {
-  let datum =
-    OracleDatum {
-      price_data: GenericData(
-        [Pair(0, 490850), Pair(1, 1707172554600), Pair(2, 1707176154600)],
-      ),
-    }
+  let price_map =
+    [Pair(0, 490850), Pair(1, 1707172554600), Pair(2, 1707176154600)]
+  let price_data = GenericData { price_map }
+  let datum = OracleDatum { price_data: Some(price_data) }
   let expected_cbor =
-    #"d8799fd87b9fa3001a00077d62011b0000018d7b69e768021b0000018d7ba0d5e8ffff"
+    #"d8799fd8799fd87b9fa3001a00077d62011b0000018d7b69e768021b0000018d7ba0d5e8ffffff"
 
   cbor.serialise(datum) == expected_cbor
 }
 
 /// Oracle Datum Deserialisation checks
 test oracle_datum_getters() {
-  let datum =
-    OracleDatum {
-      price_data: GenericData(
-        [Pair(0, 2723), Pair(1, 1720056807332), Pair(2, 1720078407332)],
-      ),
-    }
+  let price_map =
+    [Pair(0, 2723), Pair(1, 1720056807332), Pair(2, 1720078407332)]
+  let price_data = GenericData { price_map }
+  let datum = OracleDatum { price_data: Some(price_data) }
 
   get_oracle_price(datum) == 2723 && get_oracle_created_at(datum) == 1720056807332 && get_expiry_at(
     datum.price_data,
@@ -197,7 +196,7 @@ test valid_price_data() {
   let valid_price_data =
     GenericData([Pair(0, 100), Pair(1, 1720056807332), Pair(2, 1720078407332)])
 
-  let result = get_price(valid_price_data)
+  let result = get_price(Some(valid_price_data))
 
   result == 100
 }
